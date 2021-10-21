@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Universal 3-digit codes</string>
+
+    <string name="file_not_found">The required file was not found.</string>
+    <string name="file_wrong_format">The format of the file is wrong.</string>
+    <string name="unknown_file">Unable to read file, unknown data.</string>
+    <string name="instructions_text">Enter the TV brand name.</string>
+</resources>
