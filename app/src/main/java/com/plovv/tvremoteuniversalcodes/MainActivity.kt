@@ -5,10 +5,12 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.gson.Gson
@@ -17,6 +19,7 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import androidx.recyclerview.widget.DividerItemDecoration
+import kotlinx.coroutines.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -119,31 +122,39 @@ class MainActivity : AppCompatActivity() {
             val am: AssetManager = this.assets
             val gson = Gson()
 
-            val inputStream = am.open("3_digit_universal_codes")
-            val reader = BufferedReader(InputStreamReader(inputStream))
+            lifecycleScope.launch {
+                var jsonString = ""
 
-            val jsonString = reader.readText()
-            val codes = gson.fromJson(jsonString, Map::class.java)
+                withContext(Dispatchers.Default) {
+                    val inputStream = am.open("3_digit_universal_codes")
+                    val reader = BufferedReader(InputStreamReader(inputStream))
 
-            if (codes.isNotEmpty()) {
-                codes.keys
-                    .map { (it as String)[0].lowercaseChar() }
-                    .distinct()
-                    .forEach {
-                        codesDictionary[it] = mutableMapOf<String, String>()
+                    jsonString  = reader.readText()
+
+                    reader.close()
+                    inputStream.close()
+                }
+
+                val codes = gson.fromJson(jsonString, Map::class.java)
+
+                if (codes.isNotEmpty()) {
+                    codes.keys
+                        .map { (it as String)[0].lowercaseChar() }
+                        .distinct()
+                        .forEach {
+                            codesDictionary[it] = mutableMapOf<String, String>()
+                        }
+
+                    codes.forEach { entry ->
+                        val dirKey: Char = (entry.key as String)[0].lowercaseChar()
+                        val brand: String = entry.key as String
+                        val brandCodes: String = entry.value as String
+
+                        codesDictionary[dirKey]?.set(brand, brandCodes)
                     }
-
-                codes.forEach { entry ->
-                    val dirKey: Char = (entry.key as String)[0].lowercaseChar()
-                    val brand: String = entry.key as String
-                    val brandCodes: String = entry.value as String
-
-                    codesDictionary[dirKey]?.set(brand, brandCodes)
                 }
             }
 
-            reader.close()
-            inputStream.close()
         } catch (e: IOException) {
             e.printStackTrace()
 
